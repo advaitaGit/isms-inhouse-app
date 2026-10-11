@@ -14,25 +14,25 @@ st.set_page_config(
     page_title="Enterprise ISMS Portal",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="expanded" # Restored sidebar to be open by default
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Themes, Animations, & Sidebar Block Menu
+# Custom CSS for Light/Dark themes, Animations, & Aggressive Sidebar Block Menu
 def inject_custom_css(theme):
     if theme == "Dark":
         bg_color = "#0e1117"
         card_bg = "#1e222d"
         text_color = "#ffffff"
         border_color = "#2e3440"
-        hover_bg = "#262b38"
-        accent_color = "#3b82f6"
+        accent_bg = "#2563eb"
+        hover_text = "#ffffff"
     else:  
         bg_color = "#f8f9fa"
         card_bg = "#ffffff"
         text_color = "#1f2937"
         border_color = "#e5e7eb"
-        hover_bg = "#f3f4f6"
-        accent_color = "#3b82f6"
+        accent_bg = "#eff6ff"
+        hover_text = "#1d4ed8"
 
     st.markdown(f"""
     <style>
@@ -40,6 +40,7 @@ def inject_custom_css(theme):
             background-color: {bg_color};
             color: {text_color};
         }}
+        
         .metric-card {{
             background: {card_bg};
             border: 1px solid {border_color};
@@ -61,30 +62,41 @@ def inject_custom_css(theme):
             to {{ opacity: 1; transform: translateY(0); }}
         }}
         
-        /* --- SIDEBAR BLOCK MENU CSS --- */
-        /* 1. Hide the radio button circles completely */
-        [data-testid="stSidebar"] div[role="radiogroup"] > label > div:first-child {{
+        /* ---------------------------------------------------------
+           AGGRESSIVE SIDEBAR BLOCK MENU OVERRIDE
+           --------------------------------------------------------- */
+        
+        /* 1. Forcefully hide the radio circles */
+        [data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label > div:first-child {{
             display: none !important;
         }}
         
-        /* 2. Style the radio labels as block items */
-        [data-testid="stSidebar"] div[role="radiogroup"] > label {{
-            background-color: {card_bg};
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid {border_color};
-            margin-bottom: 10px;
-            transition: all 0.2s ease-in-out;
-            width: 100%;
-            cursor: pointer;
+        /* 2. Style the menu options as full block buttons */
+        [data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label {{
+            background-color: {card_bg} !important;
+            padding: 12px 16px !important;
+            border-radius: 8px !important;
+            border: 1px solid {border_color} !important;
+            margin-bottom: 10px !important;
+            width: 100% !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
         }}
         
-        /* 3. Hover Effect: Change background, border, and zoom */
-        [data-testid="stSidebar"] div[role="radiogroup"] > label:hover {{
-            background-color: {hover_bg};
-            transform: scale(1.03);
-            border-color: {accent_color};
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        /* 3. Hover & Zoom Effect */
+        [data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover {{
+            background-color: {accent_bg} !important;
+            transform: scale(1.04) !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+        }}
+        
+        /* 4. Text color change on hover */
+        [data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover p {{
+            color: {hover_text} !important;
+            font-weight: 600 !important;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -113,7 +125,6 @@ def get_risk_data():
     if res.data:
         return pd.DataFrame(res.data), False
     else:
-        # Generate Professional Sample Data for Presentation
         domains = ["IT Infrastructure", "Data Privacy", "Cybersecurity", "Business Continuity", "Physical Security"]
         statuses = ["Open", "In-Progress", "Resolved", "Monitoring"]
         severities = ["Low", "Medium", "High", "Critical"]
@@ -139,40 +150,35 @@ def get_risk_data():
 risks_df, is_sample_data = get_risk_data()
 
 # -----------------------------------------------------------------------------
-# SIDEBAR & TOP-RIGHT THEME TOGGLE
+# SIDEBAR NAVIGATION & THEME TOGGLE
 # -----------------------------------------------------------------------------
-# Top right theme toggle
-col_title, col_theme = st.columns([9, 1])
-with col_theme:
-    theme_icon = "🌙" if st.session_state.theme == "Light" else "☀️"
-    if st.button(theme_icon, help="Toggle Dark/Light Mode"):
-        st.session_state.theme = "Dark" if st.session_state.theme == "Light" else "Light"
-        st.rerun()
-
-# Sidebar Navigation Block Menu
 with st.sidebar:
     st.markdown("### 🛡️ ISMS Portal")
-    st.caption("In-House Compliance & Risk")
-    st.write("") # Spacer
+    st.caption("In-House Compliance System")
+    st.divider()
     
     menu = st.radio(
         "Navigation",
         ["📊 Executive Dashboard", "⚠️ Risk Register", "📋 Gap Assessment", "📜 Audit Logs", "⚙️ Settings"],
-        label_visibility="collapsed" # Hides the word "Navigation"
+        label_visibility="collapsed"
     )
+    
+    st.divider()
+    st.caption("Appearance")
+    theme_icon = "🌙 Switch to Dark Mode" if st.session_state.theme == "Light" else "☀️ Switch to Light Mode"
+    if st.button(theme_icon, use_container_width=True):
+        st.session_state.theme = "Dark" if st.session_state.theme == "Light" else "Light"
+        st.rerun()
 
 # -----------------------------------------------------------------------------
 # 1. EXECUTIVE DASHBOARD
 # -----------------------------------------------------------------------------
 if menu == "📊 Executive Dashboard":
-    with col_title:
-        st.title("Executive Dashboard")
     st.markdown("#### Real-time Organizational Risk Overview")
     
     if is_sample_data:
         st.info("💡 **Presentation Mode:** Displaying sample data because the database is empty.")
 
-    # KPI Cards
     col1, col2, col3, col4 = st.columns(4)
     total_risks = len(risks_df)
     critical_risks = len(risks_df[risks_df['severity'] == 'Critical'])
@@ -185,20 +191,16 @@ if menu == "📊 Executive Dashboard":
     with col4: st.markdown(f'<div class="metric-card"><div class="metric-label" style="color:#10b981;">Resolved / Mitigated</div><div class="metric-value" style="color:#10b981;">{resolved_risks}</div></div>', unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Dashboard Customization / Filters
     with st.expander("🛠️ Customize Dashboard View"):
         selected_domains = st.multiselect("Filter by Domain", options=risks_df['domain'].unique(), default=risks_df['domain'].unique())
     
     filtered_df = risks_df[risks_df['domain'].isin(selected_domains)]
 
-    # Multi-Charts
     c1, c2, c3 = st.columns([1.5, 1, 1.5])
-    
     with c1:
         st.subheader("Risks by Domain (Bar)")
         fig_domain = px.bar(
-            filtered_df, x="domain", color="severity",
-            barmode="group",
+            filtered_df, x="domain", color="severity", barmode="group",
             color_discrete_map={"Critical": "#ef4444", "High": "#f97316", "Medium": "#eab308", "Low": "#3b82f6"}
         )
         fig_domain.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
@@ -212,15 +214,13 @@ if menu == "📊 Executive Dashboard":
 
     with c3:
         st.subheader("Risk Matrix (Point / Scatter)")
-        # Point chart for Impact vs Likelihood
         fig_matrix = px.scatter(
             filtered_df, x="impact", y="likelihood", 
             color="severity", size="risk_score", hover_data=["title"],
             color_discrete_map={"Critical": "#ef4444", "High": "#f97316", "Medium": "#eab308", "Low": "#3b82f6"}
         )
         fig_matrix.update_layout(
-            xaxis=dict(range=[0.5, 5.5], title="Impact"),
-            yaxis=dict(range=[0.5, 5.5], title="Likelihood"),
+            xaxis=dict(range=[0.5, 5.5], title="Impact"), yaxis=dict(range=[0.5, 5.5], title="Likelihood"),
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
         )
         st.plotly_chart(fig_matrix, use_container_width=True)
@@ -229,10 +229,8 @@ if menu == "📊 Executive Dashboard":
 # 2. RISK REGISTER
 # -----------------------------------------------------------------------------
 elif menu == "⚠️ Risk Register":
-    with col_title: st.title("⚠️ Risk Register")
-    st.markdown("#### Live Indexing & Records")
+    st.markdown("#### Risk Register & Live Indexing")
     st.dataframe(risks_df, use_container_width=True)
-    
     st.divider()
     st.subheader("Log a New Risk")
     with st.form("new_risk_form"):
@@ -258,15 +256,13 @@ elif menu == "⚠️ Risk Register":
 # 3. GAP ASSESSMENT
 # -----------------------------------------------------------------------------
 elif menu == "📋 Gap Assessment":
-    with col_title: st.title("📋 Gap Assessment")
-    st.markdown("#### ISO 27001 Readiness Checklist")
+    st.markdown("#### ISO 27001 Gap Assessment")
     st.info("Pre-audit checklist module goes here.")
 
 # -----------------------------------------------------------------------------
 # 4. AUDIT LOGS
 # -----------------------------------------------------------------------------
 elif menu == "📜 Audit Logs":
-    with col_title: st.title("📜 Audit Logs")
     st.markdown("#### Audit Trail & System Activity")
     logs_res = supabase.table("audit_logs").select("*").order("created_at", desc=True).execute()
     if logs_res.data:
@@ -278,7 +274,6 @@ elif menu == "📜 Audit Logs":
 # 5. SETTINGS
 # -----------------------------------------------------------------------------
 elif menu == "⚙️ Settings":
-    with col_title: st.title("⚙️ Settings")
     st.markdown("#### System Backup & Settings")
     if st.button("Generate Immediate Local Backup"):
         st.success("Backup downloaded (Placeholder for demo)")
