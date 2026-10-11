@@ -14,23 +14,25 @@ st.set_page_config(
     page_title="Enterprise ISMS Portal",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded" # Restored sidebar to be open by default
 )
 
-# Custom CSS for Light (Default) / Dark themes, Animations, & Block Menu
+# Custom CSS for Themes, Animations, & Sidebar Block Menu
 def inject_custom_css(theme):
     if theme == "Dark":
         bg_color = "#0e1117"
         card_bg = "#1e222d"
         text_color = "#ffffff"
         border_color = "#2e3440"
-        accent_bg = "#3b82f6"
+        hover_bg = "#262b38"
+        accent_color = "#3b82f6"
     else:  
         bg_color = "#f8f9fa"
         card_bg = "#ffffff"
         text_color = "#1f2937"
         border_color = "#e5e7eb"
-        accent_bg = "#eff6ff"
+        hover_bg = "#f3f4f6"
+        accent_color = "#3b82f6"
 
     st.markdown(f"""
     <style>
@@ -59,29 +61,30 @@ def inject_custom_css(theme):
             to {{ opacity: 1; transform: translateY(0); }}
         }}
         
-        /* Hide sidebar completely for website feel */
-        [data-testid="collapsedControl"] {{ display: none; }}
-        
-        /* Block Style Navigation styling */
-        div.row-widget.stRadio > div {{
-            flex-direction: row;
-            flex-wrap: wrap;
-            gap: 10px;
+        /* --- SIDEBAR BLOCK MENU CSS --- */
+        /* 1. Hide the radio button circles completely */
+        [data-testid="stSidebar"] div[role="radiogroup"] > label > div:first-child {{
+            display: none !important;
         }}
-        div.row-widget.stRadio > div > label {{
+        
+        /* 2. Style the radio labels as block items */
+        [data-testid="stSidebar"] div[role="radiogroup"] > label {{
             background-color: {card_bg};
-            padding: 10px 20px;
+            padding: 12px 16px;
             border-radius: 8px;
             border: 1px solid {border_color};
+            margin-bottom: 10px;
+            transition: all 0.2s ease-in-out;
+            width: 100%;
             cursor: pointer;
-            transition: all 0.2s;
         }}
-        div.row-widget.stRadio > div > label:hover {{
-            background-color: {accent_bg};
-        }}
-        /* Hide the native radio circle */
-        div.row-widget.stRadio > div > label > div:first-child {{
-            display: none;
+        
+        /* 3. Hover Effect: Change background, border, and zoom */
+        [data-testid="stSidebar"] div[role="radiogroup"] > label:hover {{
+            background-color: {hover_bg};
+            transform: scale(1.03);
+            border-color: {accent_color};
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -136,34 +139,34 @@ def get_risk_data():
 risks_df, is_sample_data = get_risk_data()
 
 # -----------------------------------------------------------------------------
-# TOP NAVIGATION BAR (Block Style) & THEME TOGGLE
+# SIDEBAR & TOP-RIGHT THEME TOGGLE
 # -----------------------------------------------------------------------------
-col_logo, col_nav, col_theme = st.columns([2, 9, 1])
-
-with col_logo:
-    st.markdown("### 🛡️ ISMS Portal")
-
-with col_nav:
-    menu = st.radio(
-        "Navigation",
-        ["📊 Executive Dashboard", "⚠️ Risk Register", "📋 Gap Assessment", "📜 Audit Logs", "⚙️ Settings"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
+# Top right theme toggle
+col_title, col_theme = st.columns([9, 1])
 with col_theme:
-    # Small top right icon toggle
     theme_icon = "🌙" if st.session_state.theme == "Light" else "☀️"
     if st.button(theme_icon, help="Toggle Dark/Light Mode"):
         st.session_state.theme = "Dark" if st.session_state.theme == "Light" else "Light"
         st.rerun()
 
-st.divider()
+# Sidebar Navigation Block Menu
+with st.sidebar:
+    st.markdown("### 🛡️ ISMS Portal")
+    st.caption("In-House Compliance & Risk")
+    st.write("") # Spacer
+    
+    menu = st.radio(
+        "Navigation",
+        ["📊 Executive Dashboard", "⚠️ Risk Register", "📋 Gap Assessment", "📜 Audit Logs", "⚙️ Settings"],
+        label_visibility="collapsed" # Hides the word "Navigation"
+    )
 
 # -----------------------------------------------------------------------------
 # 1. EXECUTIVE DASHBOARD
 # -----------------------------------------------------------------------------
 if menu == "📊 Executive Dashboard":
+    with col_title:
+        st.title("Executive Dashboard")
     st.markdown("#### Real-time Organizational Risk Overview")
     
     if is_sample_data:
@@ -226,7 +229,8 @@ if menu == "📊 Executive Dashboard":
 # 2. RISK REGISTER
 # -----------------------------------------------------------------------------
 elif menu == "⚠️ Risk Register":
-    st.markdown("#### Risk Register & Live Indexing")
+    with col_title: st.title("⚠️ Risk Register")
+    st.markdown("#### Live Indexing & Records")
     st.dataframe(risks_df, use_container_width=True)
     
     st.divider()
@@ -254,13 +258,15 @@ elif menu == "⚠️ Risk Register":
 # 3. GAP ASSESSMENT
 # -----------------------------------------------------------------------------
 elif menu == "📋 Gap Assessment":
-    st.markdown("#### ISO 27001 Gap Assessment")
+    with col_title: st.title("📋 Gap Assessment")
+    st.markdown("#### ISO 27001 Readiness Checklist")
     st.info("Pre-audit checklist module goes here.")
 
 # -----------------------------------------------------------------------------
 # 4. AUDIT LOGS
 # -----------------------------------------------------------------------------
 elif menu == "📜 Audit Logs":
+    with col_title: st.title("📜 Audit Logs")
     st.markdown("#### Audit Trail & System Activity")
     logs_res = supabase.table("audit_logs").select("*").order("created_at", desc=True).execute()
     if logs_res.data:
@@ -272,6 +278,7 @@ elif menu == "📜 Audit Logs":
 # 5. SETTINGS
 # -----------------------------------------------------------------------------
 elif menu == "⚙️ Settings":
+    with col_title: st.title("⚙️ Settings")
     st.markdown("#### System Backup & Settings")
     if st.button("Generate Immediate Local Backup"):
         st.success("Backup downloaded (Placeholder for demo)")
